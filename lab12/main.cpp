@@ -24,12 +24,19 @@ float pitch = 0.0f, yaw = -90.0f;
 Window mainWindow;
 std::vector<Mesh *> meshList;
 std::vector<Shader *> shaderList;
-glm::vec3 lightColour = glm::vec3(1.0f, 1.0f, 1.0f);
+
 // Vertex Shader
 static const char *vShader = "Shaders/shader.vert";
 
 // Fragment Shader
 static const char *fShader = "Shaders/shader.frag";
+
+glm::vec3 lightColour = glm::vec3(1.0f, 1.0f, 1.0f);
+
+Mesh* light; 
+
+static const char *lightVShader = "Shaders/lightShader.vert";
+static const char *lightFShader = "Shaders/lightShader.frag";
 
 void CreateOBJ()
 {
@@ -46,6 +53,12 @@ void CreateOBJ()
     {
         std::cout << "Failed to load model" << std::endl;
     }
+
+    light = new Mesh();
+    loaded = light->CreateMeshFromOBJ("Models/cube.obj");
+
+    if (!loaded) 
+        std::cout << "Failed to load model" << std::endl;
 }
 
 void CreateTriangle()
@@ -79,7 +92,10 @@ void CreateShaders()
     Shader *shader1 = new Shader();
     shader1->CreateFromFiles(vShader, fShader);
     shaderList.push_back(shader1);
+
     Shader *shader2 = new Shader();
+    shader2->CreateFromFiles(lightVShader, lightFShader);
+    shaderList.push_back(shader2);
 }
 void checkMouse() {
     float xoffset, yoffset;
@@ -184,6 +200,9 @@ int main()
         cameraRight = glm::normalize(glm::cross(up, cameraDirection));
         cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
 
+        glm::vec3 lightPos = glm::vec3(0.0f, 0.0f, 0.0f);
+        lightPos.x = 1.0f + sin(glfwGetTime() * 2.0f);
+        lightPos.y = sin(glfwGetTime() * 2.0f) / 2.0f;
         // Clear window
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -194,7 +213,7 @@ int main()
         uniformProjection = shaderList[0]->GetUniformLocation("projection");
         uniformView = shaderList[0]->GetUniformLocation("view");
 
-        glm::vec3 lightPos = glm::vec3(0.0f, 0.0f, 0.0f);
+        
         glm::vec3 pyramidPositions[] =
             {
                 glm::vec3(0.0f, 0.0f, -2.5f),
@@ -215,7 +234,6 @@ int main()
 
         for (int i = 0; i < 10; i++)
         {
-
             glm::mat4 model(1.0f);
             model = glm::translate(model, pyramidPositions[i]);
             model = glm::rotate(model, glm::radians(2.0f * i), glm::vec3(1.0f, 0.3f, 0.5f));
@@ -224,8 +242,8 @@ int main()
             glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
             glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
             glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(view));
-            glUniform3fv(shaderList[0]->GetUniformLocation("lightColour"), 1, (GLfloat *)&lightColour);
-            glUniform3fv(shaderList[0]->GetUniformLocation("lightPos"), 1, (GLfloat *)&lightPos);
+            glUniform3fv(shaderList[0]->GetUniformLocation("lightColour"), 1, (GLfloat*)&lightColour);
+            glUniform3fv(shaderList[0]->GetUniformLocation("lightPos"), 1, (GLfloat*)&lightPos);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texture);
 
@@ -233,6 +251,24 @@ int main()
         }
 
 
+        //light
+        shaderList[1]->UseShader();
+        uniformModel = shaderList[1]->GetUniformLocation("model");
+        uniformProjection = shaderList[1]->GetUniformLocation("projection");
+        uniformView = shaderList[1]->GetUniformLocation("view");
+
+        glm::mat4 model (1.0f);
+
+        model = glm::translate(model, lightPos);
+        model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
+
+        glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(view));
+
+        glUniform3fv(shaderList[1]->GetUniformLocation("lightColour"), 1, (GLfloat*)&lightColour);
+
+        light->RenderMesh();
 
         glUseProgram(0);
         // end draw
