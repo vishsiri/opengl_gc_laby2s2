@@ -202,7 +202,7 @@ int main()
 
         glm::vec3 lightPos = glm::vec3(0.0f, 0.0f, 0.0f);
         lightPos.x = 1.0f + sin(glfwGetTime() * 2.0f);
-        lightPos.y = sin(glfwGetTime() * 2.0f) / 2.0f;
+        lightPos.y = sin(glfwGetTime() / 2.0f);
         // Clear window
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -244,6 +244,7 @@ int main()
             glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(view));
             glUniform3fv(shaderList[0]->GetUniformLocation("lightColour"), 1, (GLfloat*)&lightColour);
             glUniform3fv(shaderList[0]->GetUniformLocation("lightPos"), 1, (GLfloat*)&lightPos);
+            glUniform3fv(shaderList[0]->GetUniformLocation("viewPos"), 1, (GLfloat *)&cameraPos);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texture);
 
